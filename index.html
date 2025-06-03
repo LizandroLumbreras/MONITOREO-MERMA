@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Monitoreo de Mermas</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #f4f4f4;
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    table {
+      width: 100%;
+      max-width: 1000px;
+      margin: auto;
+      border-collapse: collapse;
+      background: white;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+
+    th, td {
+      border: 1px solid #ccc;
+      padding: 10px;
+      font-size: 14px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background-color: #003366;
+      color: white;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: auto;
+    }
+
+    .fecha {
+      text-align: right;
+      font-size: 13px;
+      color: gray;
+    }
+  </style>
+</head>
+<body>
+  <h2>🧾 Monitoreo de Mermas Registradas</h2>
+  <div class="container">
+    <table id="tablaMonitoreo">
+      <thead>
+        <tr>
+          <th>Descripción</th>
+          <th>Motivo</th>
+          <th>Cantidad</th>
+          <th>Costo Unitario</th>
+          <th>Total</th>
+          <th>Fecha</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getFirestore, collection, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCK5nb6u2CGRJ8AB1aPlRn54b97bdeAFeM",
+      authDomain: "inventariopv-643f1.firebaseapp.com",
+      projectId: "inventariopv-643f1",
+      storageBucket: "inventariopv-643f1.appspot.com",
+      messagingSenderId: "96242533231",
+      appId: "1:96242533231:web:aae75a18fbaf9840529e9a"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const tabla = document.querySelector("#tablaMonitoreo tbody");
+
+    const q = query(collection(db, "almacenes", "mermas"), orderBy("fecha", "desc"));
+    onSnapshot(q, snapshot => {
+      tabla.innerHTML = "";
+
+      snapshot.forEach(doc => {
+        const d = doc.data();
+        const tr = document.createElement("tr");
+        const fecha = d.fecha?.toDate().toLocaleString("es-MX") || "Sin fecha";
+
+        tr.innerHTML = `
+          <td>${d.descripcion}</td>
+          <td>${d.motivo}</td>
+          <td>${d.cantidad}</td>
+          <td>$${d.costo_unitario?.toFixed(2) || "0.00"}</td>
+          <td>$${d.total?.toFixed(2) || "0.00"}</td>
+          <td class="fecha">${fecha}</td>
+        `;
+        tabla.appendChild(tr);
+      });
+    });
+  </script>
+</body>
+</html>
