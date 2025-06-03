@@ -52,6 +52,15 @@
       font-size: 13px;
       color: gray;
     }
+
+    #sumaTotal {
+      text-align: right;
+      font-weight: bold;
+      margin-top: 10px;
+      max-width: 1000px;
+      margin-left: auto;
+      margin-right: auto;
+    }
   </style>
 </head>
 <body>
@@ -70,6 +79,7 @@
       </thead>
       <tbody></tbody>
     </table>
+    <p id="sumaTotal">Total acumulado: $0.00</p>
   </div>
 
   <script type="module">
@@ -89,15 +99,19 @@
     const db = getFirestore(app);
 
     const tabla = document.querySelector("#tablaMonitoreo tbody");
+    const sumaTotalEl = document.getElementById("sumaTotal");
 
-    const q = query(collection(db, "almacenes", "mermas"), orderBy("fecha", "desc"));
+    const q = query(collection(db, "almacenes", "MERMA", "registros"), orderBy("fecha", "desc"));
     onSnapshot(q, snapshot => {
       tabla.innerHTML = "";
+      let totalAcumulado = 0;
 
       snapshot.forEach(doc => {
         const d = doc.data();
         const tr = document.createElement("tr");
         const fecha = d.fecha?.toDate().toLocaleString("es-MX") || "Sin fecha";
+
+        totalAcumulado += parseFloat(d.total || 0);
 
         tr.innerHTML = `
           <td>${d.descripcion}</td>
@@ -109,6 +123,8 @@
         `;
         tabla.appendChild(tr);
       });
+
+      sumaTotalEl.textContent = `Total acumulado: $${totalAcumulado.toFixed(2)}`;
     });
   </script>
 </body>
