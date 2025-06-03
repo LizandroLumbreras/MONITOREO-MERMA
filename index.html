@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <title>Monitoreo de Mermas</title>
+  <title>Monitoreo de Mermas Agrupadas</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"></script>
@@ -18,73 +18,74 @@
       margin-bottom: 20px;
     }
 
-    table {
-      width: 100%;
+    .grupo {
+      margin: 30px auto;
       max-width: 1000px;
-      margin: auto;
-      border-collapse: collapse;
       background: white;
       border-radius: 10px;
-      overflow: hidden;
       box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      overflow: hidden;
+    }
+
+    .grupo-header {
+      background-color: #003366;
+      color: white;
+      padding: 15px;
+      font-weight: bold;
+    }
+
+    .grupo-header span {
+      display: block;
+      font-size: 13px;
+      font-weight: normal;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
     }
 
     th, td {
       border: 1px solid #ccc;
-      padding: 10px;
-      font-size: 14px;
+      padding: 8px;
       text-align: left;
       vertical-align: top;
+      font-size: 14px;
     }
 
     th {
-      background-color: #003366;
-      color: white;
+      background-color: #f0f0f0;
     }
 
-    .container {
-      max-width: 1000px;
-      margin: auto;
-    }
-
-    .fecha {
+    .total-grupo {
       text-align: right;
-      font-size: 13px;
-      color: gray;
-    }
-
-    #sumaTotal {
-      text-align: right;
+      padding: 10px;
+      background-color: #f9f9f9;
       font-weight: bold;
-      margin-top: 10px;
+    }
+
+    #totalGeneral {
+      font-weight: bold;
+      text-align: right;
       max-width: 1000px;
-      margin-left: auto;
-      margin-right: auto;
+      margin: 20px auto;
     }
   </style>
 </head>
 <body>
-  <h2>🧾 Monitoreo de Mermas Registradas</h2>
-  <div class="container">
-    <table id="tablaMonitoreo">
-      <thead>
-        <tr>
-          <th>Descripción</th>
-          <th>Motivo</th>
-          <th>Cantidad</th>
-          <th>Costo Unitario</th>
-          <th>Total</th>
-          <th>Fecha</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-    <p id="sumaTotal">Total acumulado: $0.00</p>
-  </div>
+  <h2>🧾 Monitoreo de Mermas Agrupadas por Registro</h2>
+  <div id="contenedorMermas"></div>
+  <div id="totalGeneral">Total General: $0.00</div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getFirestore, collection, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import {
+      getFirestore,
+      collection,
+      onSnapshot,
+      query,
+      orderBy
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCK5nb6u2CGRJ8AB1aPlRn54b97bdeAFeM",
@@ -98,33 +99,85 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    const tabla = document.querySelector("#tablaMonitoreo tbody");
-    const sumaTotalEl = document.getElementById("sumaTotal");
+    const contenedor = document.getElementById("contenedorMermas");
+    const totalGeneralEl = document.getElementById("totalGeneral");
 
     const q = query(collection(db, "almacenes", "MERMA", "registros"), orderBy("fecha", "desc"));
+
     onSnapshot(q, snapshot => {
-      tabla.innerHTML = "";
-      let totalAcumulado = 0;
+      contenedor.innerHTML = "";
+      const grupos = {};
+      let totalGeneral = 0;
 
       snapshot.forEach(doc => {
         const d = doc.data();
-        const tr = document.createElement("tr");
-        const fecha = d.fecha?.toDate().toLocaleString("es-MX") || "Sin fecha";
+        const folio = d.folio || "SIN_FOLIO";
+        if (!grupos[folio]) {
+          grupos[folio] = {
+            sucursal: d.sucursal || "Sin sucursal",
+            fecha: d.fecha?.toDate().toLocaleString("es-MX") || "Sin fecha",
+            productos: [],
+            total: 0
+          };
+        }
 
-        totalAcumulado += parseFloat(d.total || 0);
-
-        tr.innerHTML = `
-          <td>${d.descripcion}</td>
-          <td>${d.motivo}</td>
-          <td>${d.cantidad}</td>
-          <td>$${d.costo_unitario?.toFixed(2) || "0.00"}</td>
-          <td>$${d.total?.toFixed(2) || "0.00"}</td>
-          <td class="fecha">${fecha}</td>
-        `;
-        tabla.appendChild(tr);
+        grupos[folio].productos.push(d);
+        grupos[folio].total += parseFloat(d.total || 0);
+        totalGeneral += parseFloat(d.total || 0);
       });
 
-      sumaTotalEl.textContent = `Total acumulado: $${totalAcumulado.toFixed(2)}`;
+      // Ordenar folios de más reciente a más antiguo
+      const foliosOrdenados = Object.keys(grupos).sort((a, b) =>
+        grupos[b].fecha.localeCompare(grupos[a].fecha)
+      );
+
+      foliosOrdenados.forEach(folio => {
+        const grupo = grupos[folio];
+        const divGrupo = document.createElement("div");
+        divGrupo.className = "grupo";
+
+        const header = document.createElement("div");
+        header.className = "grupo-header";
+        header.innerHTML = `
+          Registro: <strong>${folio}</strong>
+          <span>Sucursal: ${grupo.sucursal} | Fecha: ${grupo.fecha}</span>
+        `;
+
+        const tabla = document.createElement("table");
+        tabla.innerHTML = `
+          <thead>
+            <tr>
+              <th>Descripción</th>
+              <th>Motivo</th>
+              <th>Cantidad</th>
+              <th>Costo Unitario</th>
+              <th>Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${grupo.productos.map(p => `
+              <tr>
+                <td>${p.descripcion}</td>
+                <td>${p.motivo}</td>
+                <td>${p.cantidad}</td>
+                <td>$${p.costo_unitario?.toFixed(2) || "0.00"}</td>
+                <td>$${p.total?.toFixed(2) || "0.00"}</td>
+              </tr>
+            `).join("")}
+          </tbody>
+        `;
+
+        const totalDiv = document.createElement("div");
+        totalDiv.className = "total-grupo";
+        totalDiv.textContent = `Total del grupo: $${grupo.total.toFixed(2)}`;
+
+        divGrupo.appendChild(header);
+        divGrupo.appendChild(tabla);
+        divGrupo.appendChild(totalDiv);
+        contenedor.appendChild(divGrupo);
+      });
+
+      totalGeneralEl.textContent = `Total General: $${totalGeneral.toFixed(2)}`;
     });
   </script>
 </body>
