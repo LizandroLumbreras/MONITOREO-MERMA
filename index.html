@@ -4,6 +4,8 @@
   <meta charset="UTF-8" />
   <title>Monitoreo de Mermas</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -16,67 +18,73 @@
       margin-bottom: 20px;
     }
 
-    .registro-box {
-      background: white;
-      margin-bottom: 30px;
-      padding: 15px;
-      border-radius: 12px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-    }
-
-    .registro-box h3 {
-      margin: 0 0 10px 0;
-      color: #333;
-    }
-
     table {
       width: 100%;
+      max-width: 1000px;
+      margin: auto;
       border-collapse: collapse;
-      margin-top: 10px;
+      background: white;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
     }
 
     th, td {
       border: 1px solid #ccc;
-      padding: 8px;
-      text-align: center;
+      padding: 10px;
       font-size: 14px;
+      text-align: left;
+      vertical-align: top;
     }
 
     th {
-      background: #003366;
+      background-color: #003366;
       color: white;
     }
 
-    .total {
+    .container {
+      max-width: 1000px;
+      margin: auto;
+    }
+
+    .fecha {
+      text-align: right;
+      font-size: 13px;
+      color: gray;
+    }
+
+    #sumaTotal {
       text-align: right;
       font-weight: bold;
-      margin-top: 20px;
-      font-size: 18px;
-    }
-
-    .back-btn {
-      background-color: red;
-      color: white;
-      padding: 10px 20px;
-      border: none;
-      border-radius: 8px;
-      font-size: 16px;
-      margin-bottom: 20px;
-      cursor: pointer;
+      margin-top: 10px;
+      max-width: 1000px;
+      margin-left: auto;
+      margin-right: auto;
     }
   </style>
 </head>
 <body>
-
-  <button class="back-btn" onclick="window.history.back()">← Volver al Menú</button>
   <h2>🧾 Monitoreo de Mermas Registradas</h2>
-  <div id="contenedor-registros"></div>
-  <div class="total" id="total-general"></div>
+  <div class="container">
+    <table id="tablaMonitoreo">
+      <thead>
+        <tr>
+          <th>Descripción</th>
+          <th>Motivo</th>
+          <th>Cantidad</th>
+          <th>Costo Unitario</th>
+          <th>Total</th>
+          <th>Fecha</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <p id="sumaTotal">Total acumulado: $0.00</p>
+  </div>
 
-  <!-- Firebase modular -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getFirestore, collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getFirestore, collection, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCK5nb6u2CGRJ8AB1aPlRn54b97bdeAFeM",
@@ -90,76 +98,34 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    const contenedor = document.getElementById("contenedor-registros");
-    const totalGeneral = document.getElementById("total-general");
-    let totalAcumulado = 0;
+    const tabla = document.querySelector("#tablaMonitoreo tbody");
+    const sumaTotalEl = document.getElementById("sumaTotal");
 
-    const q = query(collection(db, "mermas"), orderBy("fecha", "desc"));
-    const snapshot = await getDocs(q);
+    const q = query(collection(db, "almacenes", "MERMA", "registros"), orderBy("fecha", "desc"));
+    onSnapshot(q, snapshot => {
+      tabla.innerHTML = "";
+      let totalAcumulado = 0;
 
-    const registrosPorFolio = {};
-
-    snapshot.forEach(doc => {
-      const data = doc.data();
-      const folio = data.folio || "SIN-FOLIO";
-      if (!registrosPorFolio[folio]) registrosPorFolio[folio] = [];
-      registrosPorFolio[folio].push(data);
-    });
-
-    Object.keys(registrosPorFolio).forEach(folio => {
-      const items = registrosPorFolio[folio];
-      let subtotal = 0;
-
-      const box = document.createElement("div");
-      box.className = "registro-box";
-      box.innerHTML = `<h3>🗂 Folio: ${folio}</h3>
-        <table>
-          <thead>
-            <tr>
-              <th>Descripción</th>
-              <th>Motivo</th>
-              <th>Cantidad</th>
-              <th>Costo Unitario</th>
-              <th>Total</th>
-              <th>Sucursal/Bodega</th>
-              <th>Fecha</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>`;
-
-      const tbody = box.querySelector("tbody");
-
-      items.forEach(item => {
-        const total = item.cantidad * item.costo_unitario;
-        subtotal += total;
-        totalAcumulado += total;
-
+      snapshot.forEach(doc => {
+        const d = doc.data();
         const tr = document.createElement("tr");
+        const fecha = d.fecha?.toDate().toLocaleString("es-MX") || "Sin fecha";
+
+        totalAcumulado += parseFloat(d.total || 0);
+
         tr.innerHTML = `
-          <td>${item.descripcion}</td>
-          <td>${item.motivo}</td>
-          <td>${item.cantidad}</td>
-          <td>$${item.costo_unitario.toFixed(2)}</td>
-          <td>$${total.toFixed(2)}</td>
-          <td>${item.sucursal || "-"}</td>
-          <td>${item.fecha.toDate().toLocaleString()}</td>
+          <td>${d.descripcion}</td>
+          <td>${d.motivo}</td>
+          <td>${d.cantidad}</td>
+          <td>$${d.costo_unitario?.toFixed(2) || "0.00"}</td>
+          <td>$${d.total?.toFixed(2) || "0.00"}</td>
+          <td class="fecha">${fecha}</td>
         `;
-        tbody.appendChild(tr);
+        tabla.appendChild(tr);
       });
 
-      const totalRow = document.createElement("tr");
-      totalRow.innerHTML = `
-        <td colspan="4"></td>
-        <td colspan="3"><strong>Subtotal Folio: $${subtotal.toFixed(2)}</strong></td>
-      `;
-      tbody.appendChild(totalRow);
-
-      contenedor.appendChild(box);
+      sumaTotalEl.textContent = `Total acumulado: $${totalAcumulado.toFixed(2)}`;
     });
-
-    totalGeneral.innerText = `💰 Total acumulado: $${totalAcumulado.toFixed(2)}`;
   </script>
-
 </body>
 </html>
