@@ -25,6 +25,7 @@
       border-radius: 10px;
       box-shadow: 0 2px 6px rgba(0,0,0,0.1);
       overflow: hidden;
+      position: relative;
     }
 
     .grupo-header {
@@ -64,11 +65,65 @@
       font-weight: bold;
     }
 
+    .btn-imprimir {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      padding: 6px 12px;
+      font-size: 12px;
+      cursor: pointer;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 6px;
+    }
+
     #totalGeneral {
       font-weight: bold;
       text-align: right;
       max-width: 1000px;
       margin: 20px auto;
+    }
+
+    #logoImpresion {
+      display: none;
+      max-width: 300px;
+      margin: 20px auto;
+    }
+
+    @media print {
+      body * {
+        visibility: hidden !important;
+      }
+
+      .grupo.imprimir,
+      .grupo.imprimir * {
+        visibility: visible !important;
+      }
+
+      .grupo.imprimir {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+      }
+
+      .grupo.imprimir .btn-imprimir {
+        display: none !important;
+      }
+
+      h2, #totalGeneral {
+        display: none !important;
+      }
+
+      .grupo.imprimir .logo-container {
+        display: block !important;
+        text-align: center;
+      }
+
+      .grupo.imprimir #logoImpresion {
+        display: block !important;
+      }
     }
   </style>
 </head>
@@ -126,15 +181,22 @@
         totalGeneral += parseFloat(d.total || 0);
       });
 
-      // Ordenar folios de más reciente a más antiguo
       const foliosOrdenados = Object.keys(grupos).sort((a, b) =>
         grupos[b].fecha.localeCompare(grupos[a].fecha)
       );
 
-      foliosOrdenados.forEach(folio => {
+      foliosOrdenados.forEach((folio, index) => {
         const grupo = grupos[folio];
         const divGrupo = document.createElement("div");
         divGrupo.className = "grupo";
+        divGrupo.id = `grupo-${index}`;
+
+        const logoContainer = document.createElement("div");
+        logoContainer.className = "logo-container";
+        logoContainer.style.display = "none";
+        logoContainer.innerHTML = `
+          <img src="logo_proveedora.jpg" id="logoImpresion" />
+        `;
 
         const header = document.createElement("div");
         header.className = "grupo-header";
@@ -142,6 +204,16 @@
           Registro: <strong>${folio}</strong>
           <span>Sucursal: ${grupo.sucursal} | Fecha: ${grupo.fecha}</span>
         `;
+
+        const btnImprimir = document.createElement("button");
+        btnImprimir.textContent = "🖨️ Imprimir";
+        btnImprimir.className = "btn-imprimir";
+        btnImprimir.onclick = () => {
+          document.querySelectorAll('.grupo').forEach(div => div.classList.remove('imprimir'));
+          divGrupo.classList.add("imprimir");
+          window.print();
+          setTimeout(() => divGrupo.classList.remove("imprimir"), 500);
+        };
 
         const tabla = document.createElement("table");
         tabla.innerHTML = `
@@ -157,11 +229,11 @@
           <tbody>
             ${grupo.productos.map(p => `
               <tr>
-                <td>${p.descripcion}</td>
-                <td>${p.motivo}</td>
-                <td>${p.cantidad}</td>
-                <td>$${p.costo_unitario?.toFixed(2) || "0.00"}</td>
-                <td>$${p.total?.toFixed(2) || "0.00"}</td>
+                <td>${p.descripcion || ""}</td>
+                <td>${p.motivo || ""}</td>
+                <td>${p.cantidad || 0}</td>
+                <td>$${parseFloat(p.costo_unitario || 0).toFixed(2)}</td>
+                <td>$${parseFloat(p.total || 0).toFixed(2)}</td>
               </tr>
             `).join("")}
           </tbody>
@@ -171,7 +243,9 @@
         totalDiv.className = "total-grupo";
         totalDiv.textContent = `Total del grupo: $${grupo.total.toFixed(2)}`;
 
+        divGrupo.appendChild(logoContainer);
         divGrupo.appendChild(header);
+        divGrupo.appendChild(btnImprimir);
         divGrupo.appendChild(tabla);
         divGrupo.appendChild(totalDiv);
         contenedor.appendChild(divGrupo);
