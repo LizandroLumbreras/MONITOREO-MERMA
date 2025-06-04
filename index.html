@@ -132,19 +132,76 @@
       );
 
       foliosOrdenados.forEach(folio => {
-        const grupo = grupos[folio];
-        const divGrupo = document.createElement("div");
-        divGrupo.className = "grupo";
+  const grupo = grupos[folio];
+  const divGrupo = document.createElement("div");
+  divGrupo.className = "grupo";
 
-        const header = document.createElement("div");
-        header.className = "grupo-header";
-        header.innerHTML = `
-          Registro: <strong>${folio}</strong>
-          <span>Sucursal: ${grupo.sucursal} | Fecha: ${grupo.fecha}</span>
-        `;
+  const header = document.createElement("div");
+  header.className = "grupo-header";
+  header.innerHTML = `
+    Registro: <strong>${folio}</strong>
+    <span>Sucursal: ${grupo.sucursal} | Fecha: ${grupo.fecha}</span>
+  `;
 
-        const tabla = document.createElement("table");
-        tabla.innerHTML = `
+  const tabla = document.createElement("table");
+  tabla.innerHTML = `
+    <thead>
+      <tr>
+        <th>Descripción</th>
+        <th>Motivo</th>
+        <th>Cantidad</th>
+        <th>Costo Unitario</th>
+        <th>Total</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${grupo.productos.map(p => `
+        <tr>
+          <td>${p.descripcion}</td>
+          <td>${p.motivo}</td>
+          <td>${p.cantidad}</td>
+          <td>$${p.costo_unitario?.toFixed(2) || "0.00"}</td>
+          <td>$${p.total?.toFixed(2) || "0.00"}</td>
+        </tr>
+      `).join("")}
+    </tbody>
+  `;
+
+  const totalDiv = document.createElement("div");
+  totalDiv.className = "total-grupo";
+  totalDiv.textContent = `Total del grupo: $${grupo.total.toFixed(2)}`;
+
+  // 🖨️ Botón de impresión funcional
+  const botonImprimir = document.createElement("button");
+  botonImprimir.textContent = "🖨️ Imprimir este grupo";
+  botonImprimir.style.margin = "10px";
+  botonImprimir.style.padding = "8px 16px";
+  botonImprimir.style.border = "none";
+  botonImprimir.style.borderRadius = "6px";
+  botonImprimir.style.backgroundColor = "#003366";
+  botonImprimir.style.color = "white";
+  botonImprimir.style.cursor = "pointer";
+
+  botonImprimir.addEventListener("click", () => {
+    const ventana = window.open("", "_blank");
+    ventana.document.write(`
+      <html>
+      <head>
+        <title>Impresión de Merma - ${folio}</title>
+        <style>
+          body { font-family: Arial, sans-serif; padding: 20px; }
+          h3 { text-align: center; }
+          table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+          th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+          th { background-color: #f0f0f0; }
+          .total { text-align: right; margin-top: 20px; font-weight: bold; }
+        </style>
+      </head>
+      <body>
+        <h3>🧾 Registro: ${folio}</h3>
+        <p><strong>Sucursal:</strong> ${grupo.sucursal}</p>
+        <p><strong>Fecha:</strong> ${grupo.fecha}</p>
+        <table>
           <thead>
             <tr>
               <th>Descripción</th>
@@ -165,17 +222,21 @@
               </tr>
             `).join("")}
           </tbody>
-        `;
+        </table>
+        <p class="total">Total del grupo: $${grupo.total.toFixed(2)}</p>
+        <script>window.print();</script>
+      </body>
+      </html>
+    `);
+    ventana.document.close();
+  });
 
-        const totalDiv = document.createElement("div");
-        totalDiv.className = "total-grupo";
-        totalDiv.textContent = `Total del grupo: $${grupo.total.toFixed(2)}`;
-
-        divGrupo.appendChild(header);
-        divGrupo.appendChild(tabla);
-        divGrupo.appendChild(totalDiv);
-        contenedor.appendChild(divGrupo);
-      });
+  divGrupo.appendChild(header);
+  divGrupo.appendChild(tabla);
+  divGrupo.appendChild(totalDiv);
+  divGrupo.appendChild(botonImprimir);
+  contenedor.appendChild(divGrupo);
+});
 
       totalGeneralEl.textContent = `Total General: $${totalGeneral.toFixed(2)}`;
     });
