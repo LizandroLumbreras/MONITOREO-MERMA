@@ -270,10 +270,13 @@
         totalGeneral += parseFloat(d.total || 0);
       });
 
-     const foliosOrdenados = Object.keys(grupos)
-  .map(f => ({ folio: f, num: parseInt(f.replace(/\D/g, '')) || 0 }))
-  .sort((a, b) => b.num - a.num)
-  .map(obj => obj.folio);
+   const foliosOrdenados = Object.entries(grupos)
+  .sort((a, b) => {
+    const fechaA = new Date(a[1].fecha);
+    const fechaB = new Date(b[1].fecha);
+    return fechaB - fechaA; // De más reciente a más antigua
+  })
+  .map(([folio]) => folio);
 
       foliosOrdenados.forEach((folio, index) => {
         const grupo = grupos[folio];
