@@ -7,152 +7,212 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"></script>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 20px;
-      margin: 0;
-      background: linear-gradient(to right, #00416A, #E4E5E6);
-      color: white;
-      min-height: 100vh;
-      position: relative;
-      box-sizing: border-box;
-    }
+  body {
+    font-family: Arial, sans-serif;
+    padding: 20px;
+    margin: 0;
+    background: linear-gradient(to right, #00416A, #E4E5E6);
+    color: white;
+    min-height: 100vh;
+    position: relative;
+    box-sizing: border-box;
+  }
 
-    .marca-agua {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      opacity: 0.08;
-      z-index: 0;
-      max-width: 80%;
-      height: auto;
-      pointer-events: none;
+  .marca-agua {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    opacity: 0.08;
+    z-index: 0;
+    max-width: 80%;
+    height: auto;
+    pointer-events: none;
+  }
+
+  h2 {
+    text-align: center;
+    margin-bottom: 20px;
+    position: relative;
+    z-index: 2;
+  }
+
+  .grupo {
+    margin: 20px auto;
+    max-width: 1000px;
+    background: rgba(255, 255, 255, 0.85);
+    border-radius: 10px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    overflow: hidden;
+    position: relative;
+    color: #333;
+    z-index: 2;
+    padding: 10px;
+  }
+
+  .grupo-header {
+    background-color: #003366;
+    color: white;
+    padding: 15px;
+    font-weight: bold;
+    font-size: 16px;
+  }
+
+  .grupo-header span {
+    display: block;
+    font-size: 13px;
+    font-weight: normal;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  th, td {
+    border: 1px solid #ccc;
+    padding: 8px;
+    text-align: left;
+    vertical-align: top;
+    font-size: 14px;
+    min-width: 100px;
+  }
+
+  th {
+    background-color: #f0f0f0;
+  }
+
+  .total-grupo {
+    text-align: right;
+    padding: 10px;
+    background-color: #f9f9f9;
+    font-weight: bold;
+  }
+
+  .btn-imprimir {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    padding: 8px 14px;
+    font-size: 14px;
+    cursor: pointer;
+    background-color: #d32f2f;
+    color: white;
+    border: none;
+    border-radius: 6px;
+  }
+
+  .btn-imprimir:hover {
+    background-color: #b71c1c;
+  }
+
+  #totalGeneral {
+    font-weight: bold;
+    text-align: right;
+    max-width: 1000px;
+    margin: 20px auto;
+    position: relative;
+    z-index: 2;
+    color: white;
+    font-size: 18px;
+  }
+
+  #logoImpresion {
+    display: none;
+    max-width: 300px;
+    margin: 20px auto;
+  }
+
+  /* Scroll horizontal tabla */
+  table::-webkit-scrollbar {
+    height: 6px;
+  }
+
+  table::-webkit-scrollbar-thumb {
+    background: #666;
+    border-radius: 4px;
+  }
+
+  @media screen and (max-width: 600px) {
+    body {
+      padding: 10px;
     }
 
     h2 {
-      text-align: center;
-      margin-bottom: 20px;
-      position: relative;
-      z-index: 2;
+      font-size: 18px;
+      padding: 0 10px;
     }
 
     .grupo {
-      margin: 30px auto;
-      max-width: 1000px;
-      background: rgba(255, 255, 255, 0.65);
-      border-radius: 10px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-      overflow: hidden;
-      position: relative;
-      color: #333;
-      z-index: 2;
+      margin: 10px 0;
+      padding: 10px;
+      border-radius: 8px;
     }
 
     .grupo-header {
-      background-color: #003366;
-      color: white;
-      padding: 15px;
-      font-weight: bold;
+      font-size: 14px;
+      padding: 10px;
     }
 
     .grupo-header span {
-      display: block;
-      font-size: 13px;
-      font-weight: normal;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-    }
-
-    th, td {
-      border: 1px solid #ccc;
-      padding: 8px;
-      text-align: left;
-      vertical-align: top;
-      font-size: 14px;
-    }
-
-    th {
-      background-color: #f0f0f0;
-    }
-
-    .total-grupo {
-      text-align: right;
-      padding: 10px;
-      background-color: #f9f9f9;
-      font-weight: bold;
+      font-size: 12px;
     }
 
     .btn-imprimir {
-      position: absolute;
-      top: 15px;
-      right: 15px;
-      padding: 6px 12px;
       font-size: 12px;
-      cursor: pointer;
-      background-color: #d32f2f;
-      color: white;
-      border: none;
-      border-radius: 6px;
+      padding: 6px 10px;
+      top: 8px;
+      right: 8px;
     }
 
-    .btn-imprimir:hover {
-      background-color: #b71c1c;
+    th, td {
+      font-size: 13px;
+      padding: 6px;
     }
 
     #totalGeneral {
-      font-weight: bold;
-      text-align: right;
-      max-width: 1000px;
-      margin: 20px auto;
-      position: relative;
-      z-index: 2;
-      color: white;
+      font-size: 16px;
+      padding: 0 10px;
+    }
+  }
+
+  @media print {
+    body * {
+      visibility: hidden !important;
     }
 
-    #logoImpresion {
-      display: none;
-      max-width: 300px;
-      margin: 20px auto;
+    .grupo.imprimir,
+    .grupo.imprimir * {
+      visibility: visible !important;
     }
 
-    @media print {
-      body * {
-        visibility: hidden !important;
-      }
-
-      .grupo.imprimir,
-      .grupo.imprimir * {
-        visibility: visible !important;
-      }
-
-      .grupo.imprimir {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-      }
-
-      .grupo.imprimir .btn-imprimir {
-        display: none !important;
-      }
-
-      h2, #totalGeneral {
-        display: none !important;
-      }
-
-      .grupo.imprimir .logo-container {
-        display: block !important;
-        text-align: center;
-      }
-
-      .grupo.imprimir #logoImpresion {
-        display: block !important;
-      }
+    .grupo.imprimir {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
     }
+
+    .grupo.imprimir .btn-imprimir {
+      display: none !important;
+    }
+
+    h2, #totalGeneral {
+      display: none !important;
+    }
+
+    .grupo.imprimir .logo-container {
+      display: block !important;
+      text-align: center;
+    }
+
+    .grupo.imprimir #logoImpresion {
+      display: block !important;
+    }
+  }
   </style>
 </head>
 <body>
