@@ -65,41 +65,45 @@
   }
 
   table {
-    width: 100%;
-    background-color: rgba(255, 255, 255, 0.05); /* fondo sutil de la tabla */
-    border-collapse: collapse;
-    display: block;
-    overflow-x: auto;
-    table-layout: fixed; /* 👈 fuerza ajuste automático de celdas */
-  }
+  width: 100%;
+  table-layout: fixed;
+  background-color: rgba(255, 255, 255, 0.05);
+  border-collapse: collapse;
+  display: block;
+  overflow-x: auto;
+}
 
-  th, td {
+th, td {
   border: 1px solid #ccc;
   padding: 10px 8px;
   line-height: 1.4;
   text-align: left;
-  vertical-align: top;
-  font-size: 14px;
-  min-width: 100px;
-  min-height: 40px;
-  word-wrap: break-word;
-  word-break: break-word;
+  vertical-align: middle;
+  font-size: 15px;
+
+  /* uniformidad de ancho para 5 columnas */
+  width: 20%;
+  min-width: 120px;
+  max-width: 300px;
+
   white-space: normal;
+  word-wrap: break-word;
   overflow-wrap: break-word;
 }
 
- th {
+th {
   background-color: rgba(255, 255, 255, 0.2);
   color: #111;
 }
-  td {
+
+td {
   background-color: rgba(255, 255, 255, 0.1);
-  color: #111; /* o #222 o #333 */
-}
-    tr {
-  min-height: 40px;
+  color: #111;
 }
 
+tr {
+  height: 45px;
+}
   .total-grupo {
     text-align: right;
     padding: 10px;
