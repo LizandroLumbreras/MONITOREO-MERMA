@@ -23,7 +23,7 @@
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    opacity: 0.03;
+    opacity: 0.10;
     z-index: 0;
     max-width: 80%;
     height: auto;
@@ -66,6 +66,7 @@
 
   table {
     width: 100%;
+    background-color: rgba(255, 255, 255, 0.05); /* fondo sutil de la tabla */
     border-collapse: collapse;
     display: block;
     overflow-x: auto;
@@ -81,9 +82,14 @@
     min-width: 100px;
   }
 
-  th {
-    background-color: #f0f0f0;
-  }
+ th {
+  background-color: rgba(255, 255, 255, 0.2); /* antes era #f0f0f0 */
+  color: white;
+}
+    td {
+  background-color: rgba(255, 255, 255, 0.1); /* más transparente */
+  color: white;
+}
 
   .total-grupo {
     text-align: right;
@@ -218,35 +224,41 @@
 <body>
   <img src="logo_proveedora.png" class="marca-agua" alt="Marca de agua" />
   <h2>🧾 Monitoreo de Mermas Agrupadas por Registro</h2>
+  <div style="text-align:center; margin-bottom: 20px; z-index:2; position:relative;">
+  <label for="mesFiltro">📅 Filtrar por mes: </label>
+  <input type="month" id="mesFiltro" />
+</div>
   <div id="contenedorMermas"></div>
   <div id="totalGeneral">Total General: $0.00</div>
 
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import {
-      getFirestore,
-      collection,
-      onSnapshot,
-      query,
-      orderBy
-    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import {
+    getFirestore,
+    collection,
+    onSnapshot,
+    query,
+    orderBy
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyCK5nb6u2CGRJ8AB1aPlRn54b97bdeAFeM",
-      authDomain: "inventariopv-643f1.firebaseapp.com",
-      projectId: "inventariopv-643f1",
-      storageBucket: "inventariopv-643f1.appspot.com",
-      messagingSenderId: "96242533231",
-      appId: "1:96242533231:web:aae75a18fbaf9840529e9a"
-    };
+  const firebaseConfig = {
+    apiKey: "AIzaSyCK5nb6u2CGRJ8AB1aPlRn54b97bdeAFeM",
+    authDomain: "inventariopv-643f1.firebaseapp.com",
+    projectId: "inventariopv-643f1",
+    storageBucket: "inventariopv-643f1.appspot.com",
+    messagingSenderId: "96242533231",
+    appId: "1:96242533231:web:aae75a18fbaf9840529e9a"
+  };
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
 
-    const contenedor = document.getElementById("contenedorMermas");
-    const totalGeneralEl = document.getElementById("totalGeneral");
+  const contenedor = document.getElementById("contenedorMermas");
+  const totalGeneralEl = document.getElementById("totalGeneral");
+  const q = query(collection(db, "almacenes", "MERMA", "registros"), orderBy("fecha", "desc"));
 
-    const q = query(collection(db, "almacenes", "MERMA", "registros"), orderBy("fecha", "desc"));
+  function renderMermas() {
+    const mesSeleccionado = document.getElementById("mesFiltro").value; // formato YYYY-MM
 
     onSnapshot(q, snapshot => {
       contenedor.innerHTML = "";
@@ -255,11 +267,17 @@
 
       snapshot.forEach(doc => {
         const d = doc.data();
+        const fecha = d.fecha?.toDate();
+        if (!fecha) return;
+
+        const añoMes = fecha.toISOString().slice(0, 7);
+        if (mesSeleccionado && añoMes !== mesSeleccionado) return;
+
         const folio = d.folio || "SIN_FOLIO";
         if (!grupos[folio]) {
           grupos[folio] = {
             sucursal: d.sucursal || "Sin sucursal",
-            fecha: d.fecha?.toDate().toLocaleString("es-MX") || "Sin fecha",
+            fecha: fecha.toLocaleString("es-MX"),
             productos: [],
             total: 0
           };
@@ -270,13 +288,9 @@
         totalGeneral += parseFloat(d.total || 0);
       });
 
-   const foliosOrdenados = Object.entries(grupos)
-  .sort((a, b) => {
-    const fechaA = new Date(a[1].fecha);
-    const fechaB = new Date(b[1].fecha);
-    return fechaB - fechaA; // De más reciente a más antigua
-  })
-  .map(([folio]) => folio);
+      const foliosOrdenados = Object.entries(grupos)
+        .sort((a, b) => new Date(b[1].fecha) - new Date(a[1].fecha))
+        .map(([folio]) => folio);
 
       foliosOrdenados.forEach((folio, index) => {
         const grupo = grupos[folio];
@@ -287,15 +301,13 @@
         const logoContainer = document.createElement("div");
         logoContainer.className = "logo-container";
         logoContainer.style.display = "none";
-        logoContainer.innerHTML = `
-          <img src="logo_proveedora.jpg" id="logoImpresion" />
-        `;
+        logoContainer.innerHTML = `<img src="logo_proveedora.jpg" id="logoImpresion" />`;
 
         const header = document.createElement("div");
         header.className = "grupo-header";
         header.innerHTML = `
-          Registro: <strong>${folio}</strong>
-          <span>Sucursal: ${grupo.sucursal} | Fecha: ${grupo.fecha}</span>
+          Registro: <strong>${folio}</strong> &nbsp; | &nbsp; Sucursal: <strong>${grupo.sucursal}</strong>
+          <span style="display:block; font-size:13px; font-weight:normal; margin-top:4px;">Fecha: ${grupo.fecha}</span>
         `;
 
         const btnImprimir = document.createElement("button");
@@ -346,7 +358,18 @@
 
       totalGeneralEl.textContent = `Total General: $${totalGeneral.toFixed(2)}`;
     });
-  </script>
+  }
+
+  // Ejecutar la función al cargar
+  renderMermas();
+
+  // Volver a ejecutar cuando el mes cambie
+  document.getElementById("mesFiltro").addEventListener("change", () => {
+    contenedor.innerHTML = "";
+    totalGeneralEl.textContent = "Total General: $0.00";
+    renderMermas();
+  });
+</script>
 </body>
 </html>
 
