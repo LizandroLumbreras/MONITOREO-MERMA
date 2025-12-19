@@ -232,6 +232,13 @@ tr {
       display: block !important;
     }
   }
+    .estado-recuperacion {
+  padding: 6px;
+  border-radius: 6px;
+  font-weight: bold;
+}
+.estado-recuperacion option[value="RECUPERADO"] { color: green; }
+.estado-recuperacion option[value="NO_RECUPERADO"] { color: red; }
   </style>
 </head>
 <body>
@@ -251,6 +258,7 @@ tr {
     collection,
     onSnapshot,
     query,
+     doc, updateDoc, serverTimestamp,
     orderBy
   } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
@@ -278,8 +286,9 @@ tr {
       const grupos = {};
       let totalGeneral = 0;
 
-      snapshot.forEach(doc => {
-        const d = doc.data();
+     snapshot.forEach(docSnap => {
+  const d = docSnap.data();
+  d.__id = docSnap.id; // ✅ ahora sí
         const fecha = d.fecha?.toDate();
         if (!fecha) return;
 
@@ -334,28 +343,62 @@ tr {
         };
 
         const tabla = document.createElement("table");
-        tabla.innerHTML = `
-          <thead>
-            <tr>
-              <th>Descripción</th>
-              <th>Motivo</th>
-              <th>Cantidad</th>
-              <th>Costo Unitario</th>
-              <th>Total</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${grupo.productos.map(p => `
-              <tr>
-                <td>${p.descripcion || ""}</td>
-                <td>${p.motivo || ""}</td>
-                <td>${p.cantidad || 0}</td>
-                <td>$${parseFloat(p.costo_unitario || 0).toFixed(2)}</td>
-                <td>$${parseFloat(p.total || 0).toFixed(2)}</td>
-              </tr>
-            `).join("")}
-          </tbody>
+tabla.innerHTML = `
+  <thead>
+    <tr>
+      <th>Descripción</th>
+      <th>Motivo</th>
+      <th>Cantidad</th>
+      <th>Costo Unitario</th>
+      <th>Total</th>
+      <th>Recuperación</th>
+    </tr>
+  </thead>
+
+<tbody>
+${grupo.productos.map(p => {
+  const estado = p.estadoRecuperacion || "PENDIENTE";
+
+  return `
+    <tr data-id="${p.__id}">
+      <td>${p.descripcion || ""}</td>
+      <td>${p.motivo || ""}</td>
+      <td>${p.cantidad || 0}</td>
+      <td>$${parseFloat(p.costo_unitario || 0).toFixed(2)}</td>
+      <td>$${parseFloat(p.total || 0).toFixed(2)}</td>
+      <td>
+        <select class="estado-recuperacion">
+          <option value="PENDIENTE" ${estado==="PENDIENTE"?"selected":""}>⏳ Pendiente</option>
+          <option value="RECUPERADO" ${estado==="RECUPERADO"?"selected":""}>✅ Recuperado</option>
+          <option value="NO_RECUPERADO" ${estado==="NO_RECUPERADO"?"selected":""}>❌ No recuperado</option>
+        </select>
+      </td>
+    </tr>
+  `;
+}).join("")}
+</tbody>
         `;
+        // 🔒 Eventos para cambio de estado de recuperación
+tabla.querySelectorAll(".estado-recuperacion").forEach(select => {
+  select.addEventListener("change", async (e) => {
+    const fila = e.target.closest("tr");
+    const id = fila.dataset.id;
+    const nuevoEstado = e.target.value;
+
+    try {
+      await updateDoc(
+        doc(db, "almacenes", "MERMA", "registros", id),
+        {
+          estadoRecuperacion: nuevoEstado,
+          fechaDecision: serverTimestamp()
+        }
+      );
+    } catch (err) {
+      alert("Error al guardar el estado");
+      console.error(err);
+    }
+  });
+});
 
         const totalDiv = document.createElement("div");
         totalDiv.className = "total-grupo";
